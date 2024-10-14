@@ -19,6 +19,22 @@ const MemberController = {
                 message: "Lỗi khi create member"
             })
         }
+    },
+    showListMember: async (req, res) => {
+        try {
+            const data = await MemberModel.find()
+            res.json({
+                status: true,
+                message: "Lấy danh sách thành viên thành công",
+                data: data
+            })
+        } catch (error) {
+            console.log(error)
+            res.json({
+                status: false,
+                message: "Có lỗi khi lấy danh sách member"
+            })
+        }
     }
 }
 
