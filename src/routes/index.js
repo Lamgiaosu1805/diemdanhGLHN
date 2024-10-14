@@ -1,8 +1,9 @@
 const testRouter = require('./test')
+const memberRouter = require('./member')
 
-const api_ver = "/api/v1"
 const route = (app) => {
-    app.use(`${api_ver}/test`, testRouter)
+    app.use(`/test`, testRouter)
+    app.use(`/member`, memberRouter)
 }
 
 module.exports = route;

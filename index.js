@@ -1,8 +1,12 @@
 const express = require('express')
 const app = express()
-const port = 3000
 const route = require('./src/routes')
 const morgan = require('morgan')
+const db = require('./src/config/connectdb')
+
+const dotenv = require('dotenv');
+
+dotenv.config();
 
 //use middlewares
 app.use(morgan('dev'))
@@ -13,6 +17,11 @@ app.use(express.urlencoded({
 
 //routing
 route(app);
+
+//connectdb
+db.connect()
+
+const port = process.env.PORT
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
