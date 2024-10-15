@@ -1,7 +1,6 @@
 const auth = {
     veryfy: (req, res, next) => {
-        console.log(req)
-        if(req.body.key == 'lamngonzai' || req.query.key == 'lamngonzai') {
+        if(req.headers.key == "lamngonzai") {
             next()
         }
         else {
