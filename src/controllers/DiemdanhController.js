@@ -33,6 +33,31 @@ const DiemDanhController = {
                 message: "Có lỗi khi get list sheet"
             })
         }
+    },
+    sortSubmit: async (req, res) => {
+        const {body} = req
+        try {
+            const listThanhVien = body.listThanhVien
+            const dataDiemDanh = listThanhVien.map((e) => {
+                return {
+                    idSheet: body.idSheet,
+                    infoThanhVien: e.infoThanhVien,
+                    status: e.statusDiemDanh
+                }
+            })
+            console.log(dataDiemDanh)
+            res.json({
+                status: true,
+                message: "Thành công"
+            })
+            
+        } catch (error) {
+            console.log(error)
+            res.json({
+                status: false,
+                message: "Có lỗi khi chốt điểm danh mềm"
+            })
+        }
     }
 }
 
