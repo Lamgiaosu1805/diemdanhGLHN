@@ -21,7 +21,7 @@ const DiemDanhController = {
             if(count > limit - 1) {
                 res.json({
                     status: false,
-                    message: `Chỉ được thêm tối đa ${limit} sheet`
+                    message: `Chỉ được thêm tối đa ${limit} sheet trong ngày`
                 })
                 return
             }
