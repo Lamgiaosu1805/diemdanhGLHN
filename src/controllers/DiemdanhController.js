@@ -3,6 +3,28 @@ const SheetDiemDanhModel = require("../models/SheetDiemDanhModel")
 const DiemDanhController = {
     createSheetDiemDanh: async (req, res) => {
         try {
+            const result = await SheetDiemDanhModel.aggregate([
+                {
+                  $match: {
+                    createdAt: {
+                      $gte: new Date().toISOString(),
+                      $lte: new Date(new Date().getTime() + 24 * 60 * 60 * 1000).toISOString()
+                    }
+                  }
+                },
+                {
+                  $count: "total"
+                }
+            ])
+            const count = result[0]?.total || 0
+            const limit = 2
+            if(count > limit - 1) {
+                res.json({
+                    status: false,
+                    message: `Chỉ được thêm tối đa ${limit} sheet`
+                })
+                return
+            }
             await new SheetDiemDanhModel({
                 time: req.body.time
             }).save()
