@@ -1,3 +1,4 @@
+const DiemDanhThanhVienModel = require("../models/DiemDanhThanhVienModel")
 const SheetDiemDanhModel = require("../models/SheetDiemDanhModel")
 
 const DiemDanhController = {
@@ -59,15 +60,30 @@ const DiemDanhController = {
     sortSubmit: async (req, res) => {
         const {body} = req
         try {
+            const thanhVienTheoSheet = await DiemDanhThanhVienModel.find({idSheet: body.idSheet});
             const listThanhVien = body.listThanhVien
             const dataDiemDanh = listThanhVien.map((e) => {
                 return {
                     idSheet: body.idSheet,
-                    infoThanhVien: e.infoThanhVien,
-                    status: e.statusDiemDanh
+                    infoThanhVien: e,
+                    status: e.status
                 }
             })
-            console.log(dataDiemDanh)
+            const listId = thanhVienTheoSheet.map(e => {
+                return e.infoThanhVien.idMember
+            })
+            for (const item of dataDiemDanh) {
+                const infoThanhVien = item.infoThanhVien
+                const idMember = infoThanhVien.idMember
+
+                if(listId.includes(idMember)){
+                    const idSheetThanhVien = thanhVienTheoSheet.find((e) => e.infoThanhVien.idMember == idMember).id
+                    await DiemDanhThanhVienModel.updateOne({_id: idSheetThanhVien}, {infoThanhVien: infoThanhVien, status: infoThanhVien.status});
+                } else {
+                    const newSheetThanhVien = new DiemDanhThanhVienModel(item);
+                    await newSheetThanhVien.save();
+                }
+            }
             res.json({
                 status: true,
                 message: "Thành công"
