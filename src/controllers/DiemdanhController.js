@@ -1,5 +1,6 @@
 const DiemDanhThanhVienModel = require("../models/DiemDanhThanhVienModel")
 const SheetDiemDanhModel = require("../models/SheetDiemDanhModel")
+const moment = require('moment-timezone')
 
 const DiemDanhController = {
     createSheetDiemDanh: async (req, res) => {
@@ -58,9 +59,17 @@ const DiemDanhController = {
             })
         }
     },
-    sortSubmit: async (req, res) => {
+    softSubmit: async (req, res) => {
         const {body} = req
         try {
+            const sheetDiemDanh = await SheetDiemDanhModel.findById(body.idSheet)
+            if(!sheetDiemDanh || sheetDiemDanh.status == 2) {
+                res.json({
+                    status: false,
+                    message: "Không thể lưu khi đã chốt danh sách điểm danh"
+                })
+                return
+            } 
             const thanhVienTheoSheet = await DiemDanhThanhVienModel.find({idSheet: body.idSheet});
             const listThanhVien = body.listThanhVien
             const dataDiemDanh = listThanhVien.map((e) => {
@@ -86,9 +95,13 @@ const DiemDanhController = {
                 }
             }
             await SheetDiemDanhModel.updateOne({_id: body.idSheet}, {status: 1})
+            const now = moment.tz(Date.now(), 'Asia/Ho_Chi_Minh').format();
             res.json({
                 status: true,
-                message: "Thành công"
+                message: "Thành công",
+                data: {
+                    updatedAt: now
+                }
             })
             
         } catch (error) {
@@ -121,6 +134,34 @@ const DiemDanhController = {
             res.json({
                 status: false,
                 message: "Có lỗi khi lấy danh sách thành viên điểm danh"
+            })
+        }
+    },
+    blockDiemDanh: async (req, res) => {
+        const {body} = req
+        try {
+            const sheetDiemDanh = await SheetDiemDanhModel.findById(body.idSheet)
+            if(!sheetDiemDanh || sheetDiemDanh.status != 1) {
+                res.json({
+                    status: false,
+                    message: 'Sheet điểm danh không tồn tại hoặc chưa lưu lại, bạn cần lưu sheet trước khi chốt điểm danh.'
+                })
+                return
+            }
+            const now = moment.tz(Date.now(), 'Asia/Ho_Chi_Minh').format();
+            await sheetDiemDanh.updateOne({status: 2})
+            res.json({
+                status: true,
+                message: "Chốt điểm danh thành công",
+                data: {
+                    updatedAt: now
+                }
+            })
+        } catch (error) {
+            console.log(error)
+            res.json({
+                status: false,
+                message: "Có lỗi khi chốt điểm danh"
             })
         }
     }
