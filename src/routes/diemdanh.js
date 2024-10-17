@@ -9,5 +9,6 @@ router.post('/blockDiemDanh', auth.veryfy, DiemDanhController.blockDiemDanh);
 
 router.get('/getListSheetDiemDanh', auth.veryfy, DiemDanhController.getListSheet);
 router.get('/getListMemberDiemDanh/:idSheet', auth.veryfy, DiemDanhController.getListMemberDiemDanh);
+router.get('/genExcelFile/:idSheet', DiemDanhController.generateExcelFile);
 
 module.exports = router;

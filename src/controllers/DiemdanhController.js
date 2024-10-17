@@ -1,6 +1,8 @@
 const DiemDanhThanhVienModel = require("../models/DiemDanhThanhVienModel")
 const SheetDiemDanhModel = require("../models/SheetDiemDanhModel")
 const moment = require('moment-timezone')
+const XLSX = require('xlsx');
+const ExcelJS = require('exceljs');
 
 const DiemDanhController = {
     createSheetDiemDanh: async (req, res) => {
@@ -164,6 +166,70 @@ const DiemDanhController = {
                 message: "Có lỗi khi chốt điểm danh"
             })
         }
+    },
+    generateExcelFile: async (req, res) => {
+        const data = await DiemDanhThanhVienModel.find({ idSheet: req.params.idSheet });
+const wb = XLSX.utils.book_new();
+
+// Tạo tiêu đề cho worksheet
+const header = [
+  { ID: "ID" },
+  { SheetID: "SheetID" },
+  { MemberID: "MemberID" },
+  { Fullname: "Fullname" },
+  { Status: "Status" },
+  { CreatedAt: "CreatedAt" },
+  { UpdatedAt: "UpdatedAt" },
+];
+
+// Chuyển tiêu đề thành một đối tượng
+const headerObject = header.reduce((acc, curr) => ({ ...acc, ...curr }), {});
+
+// Thêm tiêu đề vào worksheet
+const ws = XLSX.utils.json_to_sheet(data.map(item => ({
+  ID: item._id.toString(),
+  SheetID: item.idSheet,
+  MemberID: item.infoThanhVien.idMember,
+  Fullname: item.infoThanhVien.fullname,
+  Status: item.infoThanhVien.status,
+  CreatedAt: item.createdAt,
+  UpdatedAt: item.updatedAt,
+})));
+
+// Thêm hàng tiêu đề vào worksheet
+XLSX.utils.sheet_add_json(ws, [headerObject], { skipHeader: true, origin: "A1" });
+
+// Đặt định dạng cho tiêu đề hàng
+const range = XLSX.utils.decode_range(ws['!ref']);
+for (let col = range.s.c; col <= range.e.c; col++) {
+  const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+  const cell = ws[cellAddress];
+  if (cell) {
+    cell.s = {
+      font: {
+        bold: true, // In đậm tiêu đề
+        name: "Times New Roman", // Thay đổi font chữ
+        sz: 12, // Kích thước font
+        color: { rgb: "FF000000" }, // Màu sắc font (đen)
+      },
+      alignment: {
+        horizontal: "center", // Căn giữa tiêu đề
+      },
+    };
+  }
+}
+
+// Đặt tên cho worksheet và thêm vào workbook
+XLSX.utils.book_append_sheet(wb, ws, 'Members');
+
+// Xuất file Excel dưới dạng buffer
+const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' });
+
+// Chuyển đổi buffer thành base64
+const base64Excel = Buffer.from(excelBuffer).toString('base64');
+
+// Gửi dữ liệu về client
+res.send(base64Excel);
     }
 }
 
