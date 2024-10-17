@@ -26,12 +26,13 @@ const DiemDanhController = {
                 })
                 return
             }
-            await new SheetDiemDanhModel({
+            const newSheetDiemDanh = await new SheetDiemDanhModel({
                 time: req.body.time
             }).save()
             res.json({
                 status: true,
-                message: "Thêm sheet thành công"
+                message: "Thêm sheet thành công",
+                data: newSheetDiemDanh
             })
         } catch (error) {
             console.log(error)
@@ -84,6 +85,7 @@ const DiemDanhController = {
                     await newSheetThanhVien.save();
                 }
             }
+            await SheetDiemDanhModel.updateOne({_id: body.idSheet}, {status: 1})
             res.json({
                 status: true,
                 message: "Thành công"
@@ -94,6 +96,31 @@ const DiemDanhController = {
             res.json({
                 status: false,
                 message: "Có lỗi khi chốt điểm danh mềm"
+            })
+        }
+    },
+    getListMemberDiemDanh: async(req, res) => {
+        const {params} = req
+        try {
+            const sheetDiemDanh = await SheetDiemDanhModel.findById(params.idSheet)
+            if(sheetDiemDanh.status == 0 || !sheetDiemDanh) {
+                res.json({
+                    status: false,
+                    message: "Không đúng trạng thái của sheet điểm danh"
+                })
+                return
+            }
+            const listMember = await DiemDanhThanhVienModel.find({idSheet: params.idSheet})
+            res.json({
+                status: true,
+                message: "Lấy danh sách member thành công",
+                data: listMember
+            })
+        } catch (error) {
+            console.log(error)
+            res.json({
+                status: false,
+                message: "Có lỗi khi lấy danh sách thành viên điểm danh"
             })
         }
     }
