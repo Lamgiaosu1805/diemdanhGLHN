@@ -1,6 +1,8 @@
 const DiemDanhThanhVienModel = require("../models/DiemDanhThanhVienModel")
 const SheetDiemDanhModel = require("../models/SheetDiemDanhModel")
 const moment = require('moment-timezone')
+const XLSX = require('xlsx');
+const ExcelJS = require('exceljs');
 
 const DiemDanhController = {
     createSheetDiemDanh: async (req, res) => {
@@ -164,6 +166,77 @@ const DiemDanhController = {
                 message: "Có lỗi khi chốt điểm danh"
             })
         }
+    },
+    generateExcelFile: async (req, res) => {
+        const data = await DiemDanhThanhVienModel.find({ idSheet: req.params.idSheet });
+        const ws = XLSX.utils.json_to_sheet(data.map((item, index) => ({
+            "Số thứ tự": index + 1, // Bắt đầu từ 1 thay vì 0
+            "Họ và tên": item.infoThanhVien.fullname,
+            "Trạng thái điểm danh": item.infoThanhVien.status == 0 ? "Nghỉ" : "Đã điểm danh",
+        })));
+
+        // Đặt định dạng cho tiêu đề cột
+        const headers = ["Số thứ tự", "Họ và tên", "Trạng thái điểm danh"];
+        const headerRow = headers.reduce((acc, header, index) => {
+            acc[`A${index + 1}`] = { v: header }; // Gán tiêu đề cho ô
+            return acc;
+        }, {});
+
+        // Thêm tiêu đề vào worksheet
+        XLSX.utils.sheet_add_json(ws, [headerRow], { skipHeader: true, origin: "A1" });
+
+        // Đặt định dạng cho tiêu đề cột
+        for (let i = 0; i < headers.length; i++) {
+        const cell = ws[`A${i + 1}`];
+        if (cell) {
+            cell.s = {
+            font: {
+                bold: true, // In đậm tiêu đề
+                name: "Times New Roman", // Thay đổi font chữ
+                sz: 12, // Kích thước font
+                color: { rgb: "FF000000" }, // Màu sắc font (đen)
+            },
+            alignment: {
+                horizontal: "center", // Căn giữa tiêu đề
+            },
+            };
+        }
+        }
+
+        // Tự động điều chỉnh chiều rộng của các cột
+        const colWidths = {
+            "Số thứ tự": 0,
+            "Họ và tên": 0,
+            "Trạng thái điểm danh": 0,
+        };
+
+        // Tính toán chiều rộng cho mỗi cột
+        data.forEach((item, index) => {
+            const fullnameLength = item.infoThanhVien.fullname.length;
+            const statusLength = item.infoThanhVien.status == 0 ? "Nghỉ".length : "Đã điểm danh".length;
+
+            colWidths["Số thứ tự"] = Math.max(colWidths["Số thứ tự"], (index + 1).toString().length); // Đổi từ index sang số thứ tự
+            colWidths["Họ và tên"] = Math.max(colWidths["Họ và tên"], fullnameLength);
+            colWidths["Trạng thái điểm danh"] = Math.max(colWidths["Trạng thái điểm danh"], statusLength);
+        });
+
+        // Thiết lập chiều rộng cho các cột
+        ws['!cols'] = Object.keys(colWidths).map(key => ({ wch: colWidths[key] + 10 }));
+
+        // Tạo workbook mới và thêm worksheet vào đó
+        const wb = XLSX.utils.book_new();
+
+        // Đặt tên cho worksheet và thêm vào workbook
+        XLSX.utils.book_append_sheet(wb, ws, 'Members');
+
+        // Xuất file Excel dưới dạng buffer
+        const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' });
+
+        // Chuyển đổi buffer thành base64
+        const base64Excel = Buffer.from(excelBuffer).toString('base64');
+
+        // Gửi dữ liệu về client
+        res.send(base64Excel);
     }
 }
 
