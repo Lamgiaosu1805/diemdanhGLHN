@@ -237,6 +237,60 @@ const DiemDanhController = {
 
         // Gửi dữ liệu về client
         res.send(base64Excel);
+    },
+    getListDiemDanhMember: async (req, res) => {
+        try {
+            const listSheet = await SheetDiemDanhModel.find({status: 2})
+            const numberOfFirstTime = listSheet.filter((e) => e.time == 1).length
+            const numberOfSecondTime = listSheet.filter((e) => e.time == 2).length
+            const numberOfThirdTime = listSheet.filter((e) => e.time == 3).length
+            const listSheetMember = await DiemDanhThanhVienModel.find().populate('idSheet');
+            const listSheetMemberReal = listSheetMember.filter((e) => (e.idSheet.status == 2 && e.status == 1))
+            const data = listSheetMemberReal;
+
+            // Gộp theo idMember
+            const groupedData = Object.values(
+                data.reduce((acc, item) => {
+                    const id = item.infoThanhVien.idMember;
+
+                    if (!acc[id]) {
+                    acc[id] = {
+                        idMember: id,
+                        fullname: item.infoThanhVien.fullname, // Lấy fullname bất kỳ
+                        times: {}
+                    };
+                    }
+
+                    // Chuyển đổi time thành chuỗi tương ứng
+                    const timeMapping = {
+                    "1": "Sáng",
+                    "2": "Chiều",
+                    "3": "Lễ"
+                    };
+                    const time = timeMapping[item.idSheet.time] || item.idSheet.time; // Đề phòng nếu có time khác
+
+                    if (!acc[id].times[time]) {
+                    acc[id].times[time] = 0;
+                    }
+                    acc[id].times[time] += 1;
+
+                    return acc;
+                }, {})
+            );
+            res.json({
+                status: true,
+                data: {
+                    soLuongBuoiHoc: {
+                        tongBuoiSang: numberOfFirstTime,
+                        tongBuoiChieu: numberOfSecondTime,
+                        le: numberOfThirdTime
+                    },
+                    chiTietTungMember: groupedData
+                }
+            })
+        } catch (error) {
+            console.log(error)
+        }
     }
 }
 

@@ -3,7 +3,7 @@ const Schema = mongoose.Schema
 const moment = require('moment-timezone')
 
 const DiemDanhThanhVien = new Schema({
-    idSheet: { type: String, required: true },
+    idSheet: { type: String, required: true, ref: 'sheetDiemDanh' },
     infoThanhVien: { type: Object, required: true },
     status: { type: Number, required: true }, // Trạng thái bao gồm: 0: Nghỉ, 1: Đã điểm danh
     createdAt: {
